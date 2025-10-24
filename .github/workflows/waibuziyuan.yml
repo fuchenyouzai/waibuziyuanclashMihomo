@@ -1,0 +1,33 @@
+name: EPG Update
+on:
+  push:
+  schedule:
+    # 每天北京时间16:15执行（若需调整时间，修改前两位数字即可，格式：分 时 * * *）
+    - cron: '15 16 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Update Dat Files
+      run: |
+        # 删除旧文件（若存在）并下载4个指定文件
+        rm -f geoip.dat geosite.dat geoip.metadb GeoLite2-ASN.mmdb
+        wget https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.dat
+        wget https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat
+        wget https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.metadb
+        wget https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/GeoLite2-ASN.mmdb
+        
+        # 配置Git身份并拉取最新代码
+        git config --local user.name "github-actions[bot]"
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git pull origin main
+        
+        # 提交所有更新的dat文件
+        git add geoip.dat geosite.dat geoip.metadb GeoLite2-ASN.mmdb
+        git commit -m "Update MetaCubeX dat files"
+    - name: Push changes
+      run: git push origin main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
